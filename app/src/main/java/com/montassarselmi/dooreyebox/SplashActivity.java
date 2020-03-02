@@ -75,6 +75,7 @@ public class SplashActivity extends AppCompatActivity {
 
     public String generateId(String uid) {
 
+        // Generate a Shortcut from the box id with 6 letters.
         if (uid != null) {
             StringBuilder id = new StringBuilder();
             for (int i = uid.length() - 6; i < uid.length(); i++) {
@@ -106,13 +107,15 @@ public class SplashActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 FirebaseUser currentUser = mAuth.getCurrentUser();
-                Log.d(TAG, "onDataChange: userUidd = "+currentUser.getUid());
+                Log.d(TAG, "onDataChange: currentUser = "+currentUser.getUid());
+                //check for the box availability.
                 if (dataSnapshot.hasChild(generateId(currentUser.getUid())))
                 {
 
                     Toast.makeText(SplashActivity.this, "find it", Toast.LENGTH_SHORT).show();
                 }else {
                     Toast.makeText(SplashActivity.this, "nope", Toast.LENGTH_SHORT).show();
+                    //if the box not available or deleted than recreate an other box.
                     buildBox();
 
                 }

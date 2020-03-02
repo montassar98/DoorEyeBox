@@ -3,8 +3,7 @@ package com.montassarselmi.dooreyebox;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
+
 
 public class CallingActivity extends AppCompatActivity {
 

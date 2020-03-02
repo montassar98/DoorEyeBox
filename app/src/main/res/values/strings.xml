@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">DoorEye Box</string>
+    <string name="permissions_not_granted">This app needs access to your camera and mic to make video calls</string>
 </resources>
