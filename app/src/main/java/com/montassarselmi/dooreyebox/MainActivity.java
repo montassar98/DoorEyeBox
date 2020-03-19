@@ -1,24 +1,26 @@
 package com.montassarselmi.dooreyebox;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -48,10 +50,31 @@ public class MainActivity extends AppCompatActivity {
         btnCall.setEnabled(true);
         btnCall.setOnClickListener(callListener);
 
-
+        checkWhoPickedUp();
 
     }
-    
+
+    private void checkWhoPickedUp()
+    {
+        boxUsersRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot dp : dataSnapshot.getChildren())
+                {
+                    if (dp.hasChild("Ringing")) {
+                        Log.d(TAG, "WhoPickedUp \n" + dp.child("Ringing").getValue().toString());
+                        //if (boxUsersRef.child(dp.getKey()).child("Ringing").child("pickup").getKey())
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.d(TAG, "onCancelled: "+databaseError.toString());
+            }
+        });
+    }
+
     private View.OnClickListener callListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -69,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
         boxUsersRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
                 for (DataSnapshot dp : dataSnapshot.getChildren())
                 {
                     //generate both references for calling and ringing
@@ -79,9 +102,101 @@ public class MainActivity extends AppCompatActivity {
                     //send roomId to firebase(opentok roomId)
                     callingRef.child("Calling").child(dp.getKey()).setValue("Calling...");
                     boxUsersRef.child(dp.getKey()).child("Ringing").setValue("Ringing...");
-                    startActivity(new Intent(MainActivity.this, VideoChatActivity.class));
-                    finish();
+                    boxUsersRef.child(dp.getKey()).child("pickup").setValue(false);
+
+                    //startActivity(new Intent(MainActivity.this, VideoChatActivity.class));
+                    //finish();
                 }
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        boxUsersRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                for (DataSnapshot dp : dataSnapshot.getChildren())
+                                {
+                                    if (dp.hasChild("Ringing")&& dp.hasChild("pickup"))
+                                    {
+                                        boxUsersRef.child(dp.getKey()).child("Ringing").removeValue();
+                                        if(dp.child("pickup").getValue().equals(false)) {
+                                            boxUsersRef.child(dp.getKey()).child("pickup").removeValue();
+                                        }
+                                    }
+
+
+                                }
+                                callingRef.child("Calling").removeValue();
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                            }
+                        });
+                    }
+                },30000);
+
+                boxUsersRef.addChildEventListener(new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                    }
+
+                    @Override
+                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                        Log.d(TAG, "onChildChanged: pickup \n"+dataSnapshot.toString()+"\n"+s);
+                        if (dataSnapshot.hasChild("pickup"))
+                        {
+                            if (dataSnapshot.child("pickup").getValue().equals(true))
+                            {
+                                // remove all other references
+                                boxUsersRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                        for (DataSnapshot dp : dataSnapshot.getChildren())
+                                        {
+                                            if (dp.hasChild("Ringing")&& dp.hasChild("pickup"))
+                                            {
+                                                boxUsersRef.child(dp.getKey()).child("Ringing").removeValue();
+                                                if(dp.child("pickup").getValue().equals(false)) {
+                                                    boxUsersRef.child(dp.getKey()).child("pickup").removeValue();
+                                                }
+                                            }
+
+
+                                        }
+                                        callingRef.child("Calling").removeValue();
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                    }
+                                });
+
+                                //---------------------------
+                                Log.d(TAG, "onChildChanged: get a response and move to the chat activity");
+                                startActivity(new Intent(MainActivity.this,VideoChatActivity.class));
+                                finish();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+                    }
+
+                    @Override
+                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
             }
 
             @Override
@@ -90,6 +205,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
     public String generateId(String uid) {
 
