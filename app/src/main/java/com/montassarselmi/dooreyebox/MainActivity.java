@@ -100,10 +100,11 @@ public class MainActivity extends AppCompatActivity {
                     //create a Ringing reference below all the user that this box is calling.
                     Log.d(TAG, "onDataChange: "+dp.getKey());
                     //send roomId to firebase(opentok roomId)
-                    callingRef.child("Calling").child(dp.getKey()).setValue("Calling...");
-                    boxUsersRef.child(dp.getKey()).child("Ringing").setValue("Ringing...");
-                    boxUsersRef.child(dp.getKey()).child("pickup").setValue(false);
-
+                    if (!dp.child("status").getValue().equals("waiting")) {
+                        callingRef.child("Calling").child(dp.getKey()).setValue("Calling...");
+                        boxUsersRef.child(dp.getKey()).child("Ringing").setValue("Ringing...");
+                        boxUsersRef.child(dp.getKey()).child("pickup").setValue(false);
+                    }
                     //startActivity(new Intent(MainActivity.this, VideoChatActivity.class));
                     //finish();
                 }
