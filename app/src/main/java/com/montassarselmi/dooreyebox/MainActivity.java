@@ -64,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
                     if (dp.hasChild("checking")) {
                         //Log.d(TAG, "WhoPickedUp \n" + dp.child("Ringing").getValue().toString());
                         //if (boxUsersRef.child(dp.getKey()).child("Ringing").child("pickup").getKey())
+                        editor.putBoolean("CHECKING",true);
+                        editor.apply();
                         startActivity(new Intent(MainActivity.this, VideoChatActivity.class));
                         //finish();
                     }
