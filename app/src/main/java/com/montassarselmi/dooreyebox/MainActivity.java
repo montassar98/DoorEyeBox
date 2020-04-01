@@ -49,11 +49,30 @@ public class MainActivity extends AppCompatActivity {
         btnCall = (Button) findViewById(R.id.btnMakeCall);
         btnCall.setEnabled(true);
         btnCall.setOnClickListener(callListener);
-
+        checkFrontDoor();
         checkWhoPickedUp();
 
     }
 
+
+    private void checkFrontDoor() {
+        boxUsersRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot dp : dataSnapshot.getChildren()) {
+                    if (dp.hasChild("checking")) {
+                        startActivity(new Intent(MainActivity.this, VideoChatActivity.class));
+                        finish();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
     private void checkWhoPickedUp()
     {
         boxUsersRef.addValueEventListener(new ValueEventListener() {

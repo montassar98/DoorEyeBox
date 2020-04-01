@@ -190,9 +190,6 @@ public class VideoChatActivity extends AppCompatActivity implements Session.Sess
         }
         session.disconnect();
         startActivity(new Intent(this,MainActivity.class));
-
-
-
     }
 
     @Override
