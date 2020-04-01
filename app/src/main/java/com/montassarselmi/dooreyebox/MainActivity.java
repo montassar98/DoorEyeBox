@@ -50,20 +50,22 @@ public class MainActivity extends AppCompatActivity {
         btnCall.setEnabled(true);
         btnCall.setOnClickListener(callListener);
 
-        checkWhoPickedUp();
+        checkFrontDoor();
 
     }
 
-    private void checkWhoPickedUp()
+    private void checkFrontDoor()
     {
         boxUsersRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot dp : dataSnapshot.getChildren())
                 {
-                    if (dp.hasChild("Ringing")) {
-                        Log.d(TAG, "WhoPickedUp \n" + dp.child("Ringing").getValue().toString());
+                    if (dp.hasChild("checking")) {
+                        //Log.d(TAG, "WhoPickedUp \n" + dp.child("Ringing").getValue().toString());
                         //if (boxUsersRef.child(dp.getKey()).child("Ringing").child("pickup").getKey())
+                        startActivity(new Intent(MainActivity.this, VideoChatActivity.class));
+                        //finish();
                     }
                 }
             }
