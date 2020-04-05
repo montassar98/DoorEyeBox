@@ -11,10 +11,9 @@ public class EventHistory {
     private String responder;
     private String visitorImage;
 
-    public EventHistory(int id, String eventTime, int icon, String status, @Nullable String responder, @Nullable String visitorImage) {
+    public EventHistory(int id, String eventTime, String status, @Nullable String responder, @Nullable String visitorImage) {
         this.id = id;
         this.eventTime = eventTime;
-        this.icon = icon;
         this.status = status;
         if (responder != null)
             this.responder = responder;

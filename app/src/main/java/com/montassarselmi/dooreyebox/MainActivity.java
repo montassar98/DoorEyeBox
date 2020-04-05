@@ -21,10 +21,13 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.montassarselmi.dooreyebox.Model.Ring;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Random;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -33,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     
     private FirebaseAuth mAuth;
     private FirebaseDatabase database = FirebaseDatabase.getInstance();
-    private DatabaseReference callingRef,boxUsersRef;
+    private DatabaseReference callingRef,boxUsersRef, boxHistoryRef;
     private Button btnCall;
     private SharedPreferences mSharedPreferences;
     private SharedPreferences.Editor editor;
@@ -53,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
          mAuth = FirebaseAuth.getInstance();
         callingRef = database.getReference("BoxList/"+generateId(mAuth.getUid()));
         boxUsersRef = database.getReference("BoxList/"+generateId(mAuth.getUid())+"/users");
+        boxHistoryRef = database.getReference("BoxList/"+generateId(mAuth.getUid())+"/history/");
         btnCall = (Button) findViewById(R.id.btnMakeCall);
         btnCall.setEnabled(true);
         btnCall.setOnClickListener(callListener);
@@ -128,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
                         boxUsersRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                boolean hasResponder = false;
                                 for (DataSnapshot dp : dataSnapshot.getChildren())
                                 {
                                     if (dp.hasChild("Ringing")&& dp.hasChild("pickup"))
@@ -137,12 +142,27 @@ public class MainActivity extends AppCompatActivity {
                                         if(dp.child("pickup").getValue().equals(false)) {
                                             //Removing all the pickup references if they equal to false
                                             boxUsersRef.child(dp.getKey()).child("pickup").removeValue();
-                                        }
+                                        }else hasResponder = true;
+                                    }else Log.d(TAG, "No one");
+                                    if (dp.hasChild("pickup"))
+                                    {
+                                        if(dp.child("pickup").getValue().equals(true))
+                                            hasResponder = true;
                                     }
-
 
                                 }
                                 callingRef.child("Calling").removeValue();
+                                Log.d(TAG, "has responder: "+hasResponder);
+                                if (!hasResponder)
+                                {
+                                    Log.d(TAG, "adding to the history...");
+                                    // send to the history
+                                    Random random = new Random();
+                                    int id = random.nextInt(9999-1000)+1000;
+                                    Date currentTime = Calendar.getInstance().getTime();
+                                    Ring ring = new Ring(id, currentTime.toString());
+                                    boxHistoryRef.child("rings").child(String.valueOf(id)).setValue(ring);
+                                }
                             }
 
                             @Override
@@ -151,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
                     }
-                },60000);
+                },10000);
 
                 boxUsersRef.addChildEventListener(new ChildEventListener() {
                     @Override
