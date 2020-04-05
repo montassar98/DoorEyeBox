@@ -122,8 +122,10 @@ public class MainActivity extends AppCompatActivity {
                                 {
                                     if (dp.hasChild("Ringing")&& dp.hasChild("pickup"))
                                     {
+                                        //Removing all ringing references after 30sc
                                         boxUsersRef.child(dp.getKey()).child("Ringing").removeValue();
                                         if(dp.child("pickup").getValue().equals(false)) {
+                                            //Removing all the pickup references if they equal to false
                                             boxUsersRef.child(dp.getKey()).child("pickup").removeValue();
                                         }
                                     }
