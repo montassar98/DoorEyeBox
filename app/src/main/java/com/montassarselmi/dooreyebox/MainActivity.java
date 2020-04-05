@@ -19,7 +19,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -32,7 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private Button btnCall;
     private SharedPreferences mSharedPreferences;
     private SharedPreferences.Editor editor;
-
+    private DateFormat dateFormat;
+    private Date date;
+    private String time;
 
 
     @Override
@@ -49,7 +56,10 @@ public class MainActivity extends AppCompatActivity {
         btnCall = (Button) findViewById(R.id.btnMakeCall);
         btnCall.setEnabled(true);
         btnCall.setOnClickListener(callListener);
-
+        dateFormat = new SimpleDateFormat("HH:mm 'le' dd/MM/yyyy");
+        //get current date time with Date()
+        date = new Date();
+        time = dateFormat.format(date);
         checkFrontDoor();
 
     }
@@ -141,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
                     }
-                },30000);
+                },60000);
 
                 boxUsersRef.addChildEventListener(new ChildEventListener() {
                     @Override
