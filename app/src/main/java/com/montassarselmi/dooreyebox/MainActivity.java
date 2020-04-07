@@ -21,6 +21,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.montassarselmi.dooreyebox.CameraActivity;
 import com.montassarselmi.dooreyebox.Model.Ring;
 
 import java.text.DateFormat;
@@ -158,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
                                     Log.d(TAG, "adding to the history...");
                                     // send to the history
                                     Random random = new Random();
-                                    int id = random.nextInt(9999-1000)+1000;
+                                    int id = random.nextInt(99999-10000)+10000;
                                     Date currentTime = Calendar.getInstance().getTime();
                                     Ring ring = new Ring(id, currentTime.toString());
                                     boxHistoryRef.child("rings").child(String.valueOf(id)).setValue(ring);
@@ -213,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 //---------------------------
                                 Log.d(TAG, "onChildChanged: get a response and move to the chat activity");
-                                startActivity(new Intent(MainActivity.this,VideoChatActivity.class));
+                                startActivity(new Intent(MainActivity.this,CameraActivity.class));
                                 finish();
                             }
                         }
