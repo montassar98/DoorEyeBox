@@ -21,7 +21,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.montassarselmi.dooreyebox.CameraActivity;
 import com.montassarselmi.dooreyebox.Model.Ring;
 
 import java.text.DateFormat;
@@ -35,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "MainActivity";
     
-    private FirebaseAuth mAuth;
+    private FirebaseAuth mAuth =  FirebaseAuth.getInstance();
     private FirebaseDatabase database = FirebaseDatabase.getInstance();
     private DatabaseReference callingRef,boxUsersRef, boxHistoryRef;
     private Button btnCall;
@@ -44,6 +43,9 @@ public class MainActivity extends AppCompatActivity {
     private DateFormat dateFormat;
     private Date date;
     private String time;
+    private DatabaseReference instantImagePathRef = database.getReference().child("BoxList")
+            .child(generateId(mAuth.getCurrentUser().getUid())).child("history").child("instantImagePath");
+    private Ring ring;
 
 
     @Override
@@ -53,18 +55,13 @@ public class MainActivity extends AppCompatActivity {
 
         mSharedPreferences = getBaseContext().getSharedPreferences("MyPref", Context.MODE_PRIVATE);
         editor = mSharedPreferences.edit();
-
-         mAuth = FirebaseAuth.getInstance();
         callingRef = database.getReference("BoxList/"+generateId(mAuth.getUid()));
         boxUsersRef = database.getReference("BoxList/"+generateId(mAuth.getUid())+"/users");
         boxHistoryRef = database.getReference("BoxList/"+generateId(mAuth.getUid())+"/history/");
         btnCall = (Button) findViewById(R.id.btnMakeCall);
         btnCall.setEnabled(true);
         btnCall.setOnClickListener(callListener);
-        dateFormat = new SimpleDateFormat("HH:mm 'le' dd/MM/yyyy");
-        //get current date time with Date()
-        date = new Date();
-        time = dateFormat.format(date);
+
         checkFrontDoor();
 
     }
@@ -99,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View v) {
             btnCall.setEnabled(false);
             Toast.makeText(MainActivity.this, "Calling...", Toast.LENGTH_SHORT).show();
+            initiateCameraFragment();
             makeCall();
 
             //startActivity(new Intent(MainActivity.this,CallingActivity.class));
@@ -106,9 +104,16 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private void initiateCameraFragment()
+    {
+        Log.d(TAG, "initiateCameraFragment: ");
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container_camera, CameraFragment.newInstance())
+                .commit();
+    }
+
     private void makeCall()
     {
-
         boxUsersRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
@@ -160,9 +165,32 @@ public class MainActivity extends AppCompatActivity {
                                     // send to the history
                                     Random random = new Random();
                                     int id = random.nextInt(99999-10000)+10000;
-                                    Date currentTime = Calendar.getInstance().getTime();
-                                    Ring ring = new Ring(id, currentTime.toString());
-                                    boxHistoryRef.child("rings").child(String.valueOf(id)).setValue(ring);
+                                    //Date currentTime = Calendar.getInstance().getTime();
+                                    dateFormat = new SimpleDateFormat(getResources().getString(R.string.date_format));
+                                    //get current date time with Date()
+                                    date = new Date();
+                                    time = dateFormat.format(date);
+                                    ring = new Ring();
+                                    ring.setId(id);
+                                    ring.setEventTime(time);
+                                    ring.setStatus("Ring");
+                                    ring.setResponder("No one");
+                                    instantImagePathRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                            Log.d(TAG, "instant image path \n"+dataSnapshot.getValue());
+                                            MainActivity.this.ring.setVisitorImage(dataSnapshot.getValue().toString());
+                                            boxHistoryRef.child("rings").child(String.valueOf(MainActivity.this.ring.getId()))
+                                                    .setValue(MainActivity.this.ring);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                        }
+                                    });
+                                    //Ring ring = new Ring(id, currentTime.toString(), imagePath);
+
                                 }
                             }
 
@@ -213,9 +241,9 @@ public class MainActivity extends AppCompatActivity {
                                 });
 
                                 //---------------------------
-                                Log.d(TAG, "onChildChanged: get a response and move to the chat activity");
+                               /** Log.d(TAG, "onChildChanged: get a response and move to the chat activity");
                                 startActivity(new Intent(MainActivity.this,CameraActivity.class));
-                                finish();
+                                finish();*/
                             }
                         }
                     }
@@ -246,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    public String generateId(String uid) {
+    public static String generateId(String uid) {
 
         if (uid != null) {
             StringBuilder id = new StringBuilder();

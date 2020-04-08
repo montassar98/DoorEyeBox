@@ -2,7 +2,6 @@ package com.montassarselmi.dooreyebox;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -35,13 +34,13 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.UiThread;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
@@ -58,6 +57,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.montassarselmi.dooreyebox.MainActivity.generateId;
 
 public class CameraFragment extends Fragment {
 
@@ -85,10 +86,12 @@ public class CameraFragment extends Fragment {
     private boolean mFlashSupported;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
-    private FirebaseDatabase database;
-    private DatabaseReference  boxHistoryRef;
     private StorageReference mStorageRef = FirebaseStorage.getInstance().getReference();
-    private FirebaseAuth mAuth;
+    private FirebaseDatabase database = FirebaseDatabase.getInstance();
+    private FirebaseAuth mAuth = FirebaseAuth.getInstance();
+    private DatabaseReference instantImagePathRef = database.getReference().child("BoxList")
+            .child(generateId(mAuth.getCurrentUser().getUid())).child("history").child("instantImagePath");
+
 
     public static CameraFragment newInstance() {
         return new CameraFragment();
@@ -97,34 +100,18 @@ public class CameraFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_camera, container, false);
+        View view = inflater.inflate(R.layout.fragment_camera, container, false);
         textureView = (TextureView) view.findViewById(R.id.texture);
-        mAuth = FirebaseAuth.getInstance();
-        database = FirebaseDatabase.getInstance();
-        boxHistoryRef = database.getReference("BoxList/"+generateId(mAuth.getUid())+"/history");
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 takePicture();
-
             }
-        },5000);
+        },1000);
 
-        startActivity(new Intent(getActivity(), VideoChatActivity.class));
-        getActivity().finish();
         return view;
-    }
-    public String generateId(String uid) {
-
-        if (uid != null) {
-            StringBuilder id = new StringBuilder();
-            for (int i = uid.length() - 6; i < uid.length(); i++) {
-                id.append(uid.charAt(i));
-            }
-            return id.toString();
-        }else return null;
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
@@ -164,8 +151,7 @@ public class CameraFragment extends Fragment {
 
         @Override
         public void onError(CameraDevice camera, int error) {
-            if (cameraDevice != null)
-                 cameraDevice.close();
+            cameraDevice.close();
             cameraDevice = null;
         }
     };
@@ -195,123 +181,123 @@ public class CameraFragment extends Fragment {
     }
 
     protected void takePicture() {
-        if ( cameraDevice != null) {
-            CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-            try {
-                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
-                Size[] jpegSizes = null;
-                if (characteristics != null) {
-                    jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
-                }
-                int width = 640;
-                int height = 480;
-                if (jpegSizes != null && 0 < jpegSizes.length) {
-                    width = jpegSizes[0].getWidth();
-                    height = jpegSizes[0].getHeight();
-                }
-                ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
-                List<Surface> outputSurfaces = new ArrayList<Surface>(2);
-                outputSurfaces.add(reader.getSurface());
-                if (textureView.getSurfaceTexture() != null)
-                    outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
-                Log.d(TAG, "mousamarri iam here 3");
-                final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-                captureBuilder.addTarget(reader.getSurface());
-                captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-                // Orientation
-                int rotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();
-                captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-                final File file = new File(getActivity().getExternalFilesDir(null), "mohsenyajour" + ".jpg");
+        if (null == cameraDevice) {
+            Log.e(TAG, "cameraDevice is null");
+            return;
+        }
+        CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+        try {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
+            Size[] jpegSizes = null;
+            if (characteristics != null) {
+                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+            }
+            int width = 640;
+            int height = 480;
+            if (jpegSizes != null && 0 < jpegSizes.length) {
+                width = jpegSizes[0].getWidth();
+                height = jpegSizes[0].getHeight();
+            }
+            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+            List<Surface> outputSurfaces = new ArrayList<Surface>(2);
+            outputSurfaces.add(reader.getSurface());
+            outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
+            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            captureBuilder.addTarget(reader.getSurface());
+            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            // Orientation
+            int rotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+            final File file = new File(getActivity().getExternalFilesDir(null) , System.currentTimeMillis()+".jpg");
+            ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
+                @Override
+                public void onImageAvailable(ImageReader reader) {
+                    Image image = null;
+                    try {
+                        image = reader.acquireLatestImage();
+                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                        byte[] bytes = new byte[buffer.capacity()];
+                        buffer.get(bytes);
+                        //save(bytes);
+                        saveToStorage(bytes);
 
-                ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
-                    @Override
-                    public void onImageAvailable(ImageReader reader) {
-                        Log.d(TAG, "mousamarri iam here 1");
-                        Image image = null;
-                        try {
-                            image = reader.acquireLatestImage();
-                            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                            byte[] bytes = new byte[buffer.capacity()];
-                            buffer.get(bytes);
-                            save(bytes);
-                            final StorageReference ref = mStorageRef.child("screenshots/rings/"+mAuth.getUid());
-                            String filePath =  file.getPath();
-                            Bitmap b = BitmapFactory.decodeFile(filePath);
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            b.compress(Bitmap.CompressFormat.JPEG, 30, baos);
-                            byte[] bitmapData = baos.toByteArray();
-                            UploadTask uploadTask = ref.putBytes(bitmapData);
-                            uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (image != null) {
+                            image.close();
+                        }
+                    }
+                }
+                private  void saveToStorage(byte[] bytes) throws IOException{
+                    Log.d(TAG, "Saving image to firebase storage");
+                    final StorageReference ref = mStorageRef.child("screenshots/rings/"+System.currentTimeMillis());
+                    Bitmap capturedImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    capturedImage.compress(Bitmap.CompressFormat.JPEG, 20, baos);
+                    byte[] bitmapData = baos.toByteArray();
+                    UploadTask uploadTask = ref.putBytes(bitmapData);
+                    uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                                 @Override
-                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                    ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                                        @Override
-                                        public void onSuccess(Uri uri) {
-                                            Log.d(TAG, "mousamarri: " + uri.toString());
-                                            boxHistoryRef.child("imgUrl").setValue(uri.toString());
-                                        }
-                                    });
-                                }
-                            }).addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Log.d(TAG, "mousamarri failed: ");
+                                public void onSuccess(Uri uri) {
+                                    Log.d(TAG, "image uri: "+uri.toString());
+                                    instantImagePathRef.setValue(uri.toString());
+                                    Toast.makeText(getContext(), "image Saved", Toast.LENGTH_SHORT).show();
+
                                 }
                             });
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.d(TAG, "onFailure saving image to firebase storage");
+                        }
+                    });
 
-                            //send file
-                            Log.d(TAG, "mousamarri iam here 2");
 
-
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } finally {
-                            if (image != null) {
-                                image.close();
-                            }
+                }
+                private void save(byte[] bytes) throws IOException {
+                    OutputStream output = null;
+                    try {
+                        output = new FileOutputStream(file);
+                        output.write(bytes);
+                    } finally {
+                        if (null != output) {
+                            output.close();
                         }
                     }
+                }
+            };
+            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
+            final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                    super.onCaptureCompleted(session, request, result);
+                    Toast.makeText(getContext(), "Saved:" + file, Toast.LENGTH_SHORT).show();
+                    createCameraPreview();
+                }
+            };
+            cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(CameraCaptureSession session) {
+                    try {
+                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
 
-                    private void save(byte[] bytes) throws IOException {
-                        OutputStream output = null;
-                        try {
-                            output = new FileOutputStream(file);
-                            output.write(bytes);
-                        } finally {
-                            if (null != output) {
-                                output.close();
-                            }
-                        }
-                    }
-                };
-                reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
-                final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
-                    @Override
-                    public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-                        super.onCaptureCompleted(session, request, result);
-                        //Toast.makeText(getContext(), "Saved:" + file, Toast.LENGTH_SHORT).show();
-                        createCameraPreview();
-                    }
-                };
-                cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
-                    @Override
-                    public void onConfigured(CameraCaptureSession session) {
-                        try {
-                            session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
-                        } catch (CameraAccessException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onConfigureFailed(CameraCaptureSession session) {
-                    }
-                }, mBackgroundHandler);
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
+                @Override
+                public void onConfigureFailed(CameraCaptureSession session) {
+                }
+            }, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
         }
     }
 
@@ -319,30 +305,28 @@ public class CameraFragment extends Fragment {
         try {
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
-            if (texture != null) {
-                texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
-                Surface surface = new Surface(texture);
-                captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                captureRequestBuilder.addTarget(surface);
-                cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
-                    @Override
-                    public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                        //The camera is already closed
-                        if (null == cameraDevice) {
-                            return;
-                        }
-                        // When the session is ready, we start displaying the preview.
-                        cameraCaptureSessions = cameraCaptureSession;
-                        updatePreview();
+            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+            Surface surface = new Surface(texture);
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.addTarget(surface);
+            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    //The camera is already closed
+                    if (null == cameraDevice) {
+                        return;
                     }
+                    // When the session is ready, we start displaying the preview.
+                    cameraCaptureSessions = cameraCaptureSession;
+                    updatePreview();
+                }
 
-                    @Override
-                    public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                        Toast.makeText(getContext(), "Configuration change", Toast.LENGTH_SHORT).show();
-                    }
-                }, null);
-            }
-        }catch (CameraAccessException e) {
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    Toast.makeText(getContext(), "Configuration change", Toast.LENGTH_SHORT).show();
+                }
+            }, null);
+        } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
