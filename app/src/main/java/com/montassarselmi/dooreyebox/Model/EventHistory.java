@@ -6,7 +6,6 @@ public class EventHistory {
 
     private int id;
     private String eventTime;
-    private int icon;
     private String status;
     private String responder;
     private String visitorImage;
@@ -38,14 +37,6 @@ public class EventHistory {
 
     public void setEventTime(String eventTime) {
         this.eventTime = eventTime;
-    }
-
-    public int getIcon() {
-        return icon;
-    }
-
-    public void setIcon(int icon) {
-        this.icon = icon;
     }
 
     public String getStatus() {

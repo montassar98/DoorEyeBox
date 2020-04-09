@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                             Log.d(TAG, "instant image path \n"+dataSnapshot.getValue());
                                             MainActivity.this.ring.setVisitorImage(dataSnapshot.getValue().toString());
-                                            boxHistoryRef.child("rings").child(String.valueOf(MainActivity.this.ring.getId()))
+                                            boxHistoryRef.child("rings").child(String.valueOf(MainActivity.this.ring.getEventTime()))
                                                     .setValue(MainActivity.this.ring);
                                         }
 
