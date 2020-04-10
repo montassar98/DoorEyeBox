@@ -33,7 +33,7 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "MainActivity";
-    
+
     private FirebaseAuth mAuth =  FirebaseAuth.getInstance();
     private FirebaseDatabase database = FirebaseDatabase.getInstance();
     private DatabaseReference callingRef,boxUsersRef, boxHistoryRef;
@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
                         editor.putBoolean("CHECKING",true);
                         editor.apply();
                         startActivity(new Intent(MainActivity.this, VideoChatActivity.class));
-                        //finish();
+                        finish();
                     }
                 }
             }
@@ -99,8 +99,6 @@ public class MainActivity extends AppCompatActivity {
             initiateCameraFragment();
             makeCall();
 
-            //startActivity(new Intent(MainActivity.this,CallingActivity.class));
-            //finish();
         }
     };
 
@@ -129,8 +127,6 @@ public class MainActivity extends AppCompatActivity {
                         boxUsersRef.child(dp.getKey()).child("Ringing").setValue("Ringing...");
                         boxUsersRef.child(dp.getKey()).child("pickup").setValue(false);
                     }
-                    //startActivity(new Intent(MainActivity.this, VideoChatActivity.class));
-                    //finish();
                 }
                 new Handler().postDelayed(new Runnable() {
                     @Override
@@ -182,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
                                             MainActivity.this.ring.setVisitorImage(dataSnapshot.getValue().toString());
                                             boxHistoryRef.child("rings").child(String.valueOf(MainActivity.this.ring.getEventTime()))
                                                     .setValue(MainActivity.this.ring);
+                                            instantImagePathRef.removeValue();
                                         }
 
                                         @Override
@@ -241,9 +238,15 @@ public class MainActivity extends AppCompatActivity {
                                 });
 
                                 //---------------------------
-                               /** Log.d(TAG, "onChildChanged: get a response and move to the chat activity");
-                                startActivity(new Intent(MainActivity.this,CameraActivity.class));
-                                finish();*/
+                                new Handler().postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Log.d(TAG, "onChildChanged: get a response and move to the chat activity");
+                                        startActivity(new Intent(MainActivity.this,VideoChatActivity.class));
+                                        finish();
+                                    }
+                                    },3000);
+
                             }
                         }
                     }
