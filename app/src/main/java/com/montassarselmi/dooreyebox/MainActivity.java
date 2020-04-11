@@ -197,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
                     }
-                },10000);
+                },30000);
 
                 boxUsersRef.addChildEventListener(new ChildEventListener() {
                     @Override
