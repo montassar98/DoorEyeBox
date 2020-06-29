@@ -7,6 +7,9 @@ import java.util.Date;
 public class Motion extends EventHistory {
 
 
+    public Motion(){
+        super();
+    }
 
     public Motion(int id, Date time, String visitorImage)
     {
@@ -16,6 +19,7 @@ public class Motion extends EventHistory {
     {
         super(id,time, "Motion", null , null);
     }
+
 
 
 }
