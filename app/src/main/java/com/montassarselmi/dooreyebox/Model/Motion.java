@@ -1,5 +1,7 @@
 package com.montassarselmi.dooreyebox.Model;
 
+import androidx.annotation.NonNull;
+
 import com.montassarselmi.dooreyebox.R;
 
 import java.util.Date;
@@ -20,6 +22,9 @@ public class Motion extends EventHistory {
         super(id,time, "Motion", null , null);
     }
 
-
-
+    @NonNull
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }

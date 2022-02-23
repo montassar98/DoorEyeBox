@@ -112,8 +112,11 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "observed value = "+aBoolean, Toast.LENGTH_SHORT).show();
             if (aBoolean) {
                 Toast.makeText(MainActivity.this, "call received", Toast.LENGTH_SHORT).show();
+                serialPort.write(ringNo.getBytes());
+                serialPort.write(motionOff.getBytes());
                 initiateCameraFragment();
                 makeCall();
+
             }
 
         });
@@ -130,8 +133,8 @@ public class MainActivity extends AppCompatActivity {
                     closeCameraFragment();
                 },30000);
                 new Handler().postDelayed(this::createMotionHistory, 5000);
-
                 initiateCameraFragment();
+
 
             }
             motionData.postValue(false);
@@ -154,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.this.motion.setVisitorImage(dataSnapshot1.getValue().toString());
                 boxHistoryRef.child("motions").child(String.valueOf(MainActivity.this.motion.getEventTime()))
                         .setValue(MainActivity.this.motion);
+
                 instantImagePathRef.removeValue();
                 //startActivity(new Intent(MainActivity.this,MainActivity.class));
                 //finish();
@@ -247,12 +251,14 @@ public class MainActivity extends AppCompatActivity {
                 ringData.postValue(true);
                 tvAppend(textView,"ring");
 
-                serialPort.write(ringNo.getBytes());
+
 
             }
             if (Arrays.equals(arg0,motion.getBytes())){
                 motionData.postValue(true);
                 tvAppend(textView,"motion");
+                //serialPort.write(motionOff.getBytes());
+
             }
 
                 //tvAppend(textView, data);
@@ -290,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
                         boxUsersRef.child(dp.getKey()).child("pickup").setValue(false);
                     }
                 }
-                new Handler().postDelayed(() -> boxUsersRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                new Handler().postDelayed(() ->{ boxUsersRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
                         boolean hasResponder = false;
@@ -358,7 +364,11 @@ public class MainActivity extends AppCompatActivity {
                     public void onCancelled(@NonNull DatabaseError databaseError) {
 
                     }
-                }),30000);
+                });
+                    serialPort.write(motionOn.getBytes());
+                    serialPort.write(ringYes.getBytes());
+
+                },30000);
 
                 boxUsersRef.addChildEventListener(new ChildEventListener() {
                     @Override
@@ -562,6 +572,8 @@ public class MainActivity extends AppCompatActivity {
         if ( serialPort != null ){
             if (serialPort.isOpen()){
                 Toast.makeText(this, "open", Toast.LENGTH_LONG).show();
+                serialPort.write(motionOn.getBytes());
+                serialPort.write(ringYes.getBytes());
             }else {
                 Toast.makeText(this, "Closed", Toast.LENGTH_SHORT).show();
             }

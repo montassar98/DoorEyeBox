@@ -66,4 +66,15 @@ public class EventHistory {
         if (visitorImage != null)
             this.visitorImage = visitorImage;
     }
+
+    @Override
+    public String toString() {
+        return "EventHistory{" +
+                "id=" + id +
+                ", eventTime=" + eventTime +
+                ", status='" + status + '\'' +
+                ", responder='" + responder + '\'' +
+                ", visitorImage='" + visitorImage + '\'' +
+                '}';
+    }
 }

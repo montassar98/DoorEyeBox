@@ -220,7 +220,6 @@ public class CameraFragment extends Fragment {
                         buffer.get(bytes);
                         //save(bytes);
                         saveToStorage(bytes);
-
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     } catch (IOException e) {
